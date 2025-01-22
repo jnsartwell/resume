@@ -5,28 +5,24 @@ interface Skill {
 }
 
 interface SkillsRadarProps {
-    size?: number;
-    skills: { [key: string]: { [key: string]: Skill[] } }; // Updated skills prop type
+    skills: { [key: string]: { [key: string]: Skill[] } };
 }
 
-const SkillsRadar: React.FC<SkillsRadarProps> = ({
-                                                     size = 300,
-                                                     skills,
-                                                 }: SkillsRadarProps) => {
+const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => {
     const skillLevels = useMemo(() => Object.keys(skills), [skills]);
+
     const skillCategories = useMemo(() => {
         const allCategories: string[] = [];
         for (const level in skills) {
             allCategories.push(...Object.keys(skills[level]));
         }
-        return Array.from(new Set(allCategories)); // Get unique categories
+        return Array.from(new Set(allCategories));
     }, [skills]);
 
     const numLevels = skillLevels.length;
     const numCategories = skillCategories.length;
     const angle = 360 / numCategories;
 
-    // Generate unique colors for each skill category
     const categoryColors = useMemo(() => {
         const colors: { [key: string]: string } = {};
         skillCategories.forEach((category, index) => {
@@ -36,49 +32,45 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({
         return colors;
     }, [skillCategories, numCategories]);
 
-    // Calculate radii for each skill level
     const levelRadii = useMemo(() => {
         const radii: number[] = [];
-        const radiusStep = size / 2 / numLevels;
+        const radiusStep = 50 / numLevels; // Changed from size / 2 / numLevels
         for (let i = 1; i <= numLevels; i++) {
             radii.push(radiusStep * i);
         }
         return radii;
-    }, [size, numLevels]);
+    }, [numLevels]);
 
-    // Render sector lines
     const renderSectorLines = () => (
         <>
             {skillCategories.map((_, index) => (
                 <line
                     key={index}
-                    x1={size / 2}
-                    y1={size / 2}
-                    x2={size / 2 + Math.cos((angle * index * Math.PI) / 180) * (size / 2)}
-                    y2={size / 2 + Math.sin((angle * index * Math.PI) / 180) * (size / 2)}
+                    x1="50"
+                    y1="50"
+                    x2={50 + Math.cos((angle * index * Math.PI) / 180) * 50}
+                    y2={50 + Math.sin((angle * index * Math.PI) / 180) * 50}
                     stroke="white"
-                    strokeWidth="1"
+                    strokeWidth=".25"
                 />
             ))}
         </>
     );
 
-    // Render sector names
     const renderSectorNames = () => (
         <>
             {skillCategories.map((category, index) => {
                 const textAngle = angle * index + angle / 2;
-                const radius = size / 2;
+                const radius = 50;
 
-                // Calculate path for the text
                 const pathId = `sector-path-${index}`;
-                const pathStartX = size / 2 + Math.cos((textAngle * Math.PI) / 180) * radius;
-                const pathStartY = size / 2 + Math.sin((textAngle * Math.PI) / 180) * radius;
-                const pathEndX = size / 2 + Math.cos(((textAngle + angle / 2) * Math.PI) / 180) * radius; // Adjust end angle for spacing
-                const pathEndY = size / 2 + Math.sin(((textAngle + angle / 2) * Math.PI) / 180) * radius; // Adjust end angle for spacing
+                const pathStartX = 50 + Math.cos((textAngle * Math.PI) / 180) * radius;
+                const pathStartY = 50 + Math.sin((textAngle * Math.PI) / 180) * radius;
+                const pathEndX = 50 + Math.cos(((textAngle + angle / 2) * Math.PI) / 180) * radius;
+                const pathEndY = 50 + Math.sin(((textAngle + angle / 2) * Math.PI) / 180) * radius;
 
                 return (
-                    <>
+                    <React.Fragment key={index}>
                         <path
                             id={pathId}
                             d={`M ${pathStartX},${pathStartY} A ${radius},${radius} 0 0 1 ${pathEndX},${pathEndY}`}
@@ -86,22 +78,21 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({
                             stroke="none"
                         />
                         <text
-                            fontSize="14"
+                            fontSize="2"
                             fontWeight="bold"
                             dominantBaseline="central"
                             fill="grey"
                         >
-                            <textPath href={`#${pathId}`} >
+                            <textPath href={`#${pathId}`}>
                                 {category}
                             </textPath>
                         </text>
-                    </>
+                    </React.Fragment>
                 );
             })}
         </>
     );
 
-    // Render skill names
     const renderSkillNames = () => (
         <>
             {skillLevels.map((level, levelIndex) => {
@@ -111,8 +102,8 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({
                     const skillAngleStep = angle / skills.length;
                     return skills.map((skill, skillIndex) => {
                         const skillAngle = categoryAngle + skillAngleStep * skillIndex + skillAngleStep / 2;
-                        const x = size / 2 + Math.cos((skillAngle * Math.PI) / 180) * (levelRadius * 0.7);
-                        const y = size / 2 + Math.sin((skillAngle * Math.PI) / 180) * (levelRadius * 0.7);
+                        const x = 50 + Math.cos((skillAngle * Math.PI) / 180) * (levelRadius * 0.8);
+                        const y = 50 + Math.sin((skillAngle * Math.PI) / 180) * (levelRadius * 0.8);
                         return (
                             <text
                                 key={`${level}-${category}-${skillIndex}`}
@@ -120,7 +111,7 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({
                                 y={y}
                                 dominantBaseline="middle"
                                 textAnchor="middle"
-                                fontSize="8"
+                                fontSize="2"
                                 fontWeight="bold"
                                 fill={categoryColors[category]}
                             >
@@ -133,16 +124,15 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({
         </>
     );
 
-    // Render circles for skill levels
     const renderCircles = () => (
         <>
             {levelRadii.map((radius, index) => (
                 <circle
                     key={index}
-                    cx="50%"
-                    cy="50%"
+                    cx="50"
+                    cy="50"
                     r={radius}
-                    strokeWidth={1}
+                    strokeWidth={.25}
                     stroke="#505050"
                     fill="none"
                 />
@@ -151,12 +141,13 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({
     );
 
     return (
-        <svg width={size} height={size}>
+        <svg width="100%" height="100%" viewBox="0 0 100 100">
             {renderSectorLines()}
             {renderSectorNames()}
             {renderCircles()}
             {renderSkillNames()}
         </svg>
+
     );
 };
 

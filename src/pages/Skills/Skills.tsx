@@ -5,14 +5,12 @@ import {skillsWithExpertiseLevels} from "../../data/SkillData.ts";
 
 
 const Skills: React.FC = () => {
-
     return (
-        <div className={"skillsRadar"}>
-            <div>Skills Radar</div>
+        <div className={"skills-container"}>
+            <h1>Skills Radar</h1>
             <SkillsRadar size={1000} skills={skillsWithExpertiseLevels}/>
         </div>
     )
-
 }
 
 export default Skills;
