@@ -1,10 +1,10 @@
 import './App.css'
-import SkillsRadar from "./pages/SkillsRadar/SkillsRadar.tsx";
+import Skills from "./pages/Skills/Skills.tsx";
 
 function App() {
 
     return (
-        <SkillsRadar/>
+        <Skills/>
     )
 }
 
