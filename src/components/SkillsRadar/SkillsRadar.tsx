@@ -124,22 +124,49 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({ skills }: SkillsRadarProps) =
             })}
         </>
     );
-    const renderCircles = () => (
-        <>
-            {levelRadii.map((radius, index) => (
+    const renderCircles = () => {
+        const radii: { [key: string]: number[] } = {}; // Radii for each category
+
+        skillCategories.forEach((category) => {
+            const categoryLevels = Object.keys(skills[category]);
+            const numCategoryLevels = categoryLevels.length;
+            const categoryRadii: number[] = [];
+            const radiusStep = 50 / numCategoryLevels;
+            for (let i = 1; i <= numCategoryLevels; i++) {
+                categoryRadii.push(radiusStep * i);
+            }
+            radii[category] = categoryRadii;
+        });
+
+        return (
+            <>
+                {/* Render the complete outer circle */}
                 <circle
-                    key={index}
                     cx="50"
                     cy="50"
-                    r={radius}
+                    r={50}
                     strokeWidth={.25}
                     stroke="#505050"
                     fill="none"
                 />
-            ))}
-        </>
-    );
 
+                {skillCategories.map((category, categoryIndex) => {
+                    const categoryAngle = angle * categoryIndex;
+                    const nextCategoryAngle = angle * (categoryIndex + 1); // Angle of the next category
+                    return radii[category].map((radius, radiusIndex) => (
+                        <path
+                            key={`${category}-${radiusIndex}`}
+                            d={`M ${50 + Math.cos((categoryAngle * Math.PI) / 180) * radius},${50 + Math.sin((categoryAngle * Math.PI) / 180) * radius} 
+                               A ${radius},${radius} 0 0 1 ${50 + Math.cos((nextCategoryAngle * Math.PI) / 180) * radius},${50 + Math.sin((nextCategoryAngle * Math.PI) / 180) * radius}`}
+                            strokeWidth={.25}
+                            stroke="#505050"
+                            fill="none"
+                        />
+                    ));
+                })}
+            </>
+        );
+    };
     return (
         <svg width="100%" height="100%" viewBox="0 0 100 100">
             {renderSectorLines()}

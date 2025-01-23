@@ -43,4 +43,10 @@ export const skillsWithExpertiseLevels = {
             {name: 'Test Driven Development'},
         ]
     },
+    SoftSkill: {
+        Expert: [
+            {name: 'Test Driven Development'},
+        ],
+        SuperShredder: [{name:'Being a ninja'}]
+    },
 }
