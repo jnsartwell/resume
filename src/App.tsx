@@ -1,9 +1,21 @@
 import './App.css'
-import Skills from "./pages/Skills/Skills.tsx";
+import './fonts.css'
+import Skills from "./pages/skills/Skills.tsx";
+import {BrowserRouter, Route, Routes} from 'react-router-dom';
+import Introduction from "./pages/introduction/Introduction.tsx";
+import {script} from "./data/IntroductionScript.ts";
 
-function App() {
+const App = () => {
+
     return (
-        <Skills/>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/"
+                       element={<Introduction strings={script}
+                                              speed={100}/>}/>
+                <Route path="/skills" element={<Skills/>}/>
+            </Routes>
+        </BrowserRouter>
     )
 }
 

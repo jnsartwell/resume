@@ -40,7 +40,7 @@ export const skillsWithExpertiseLevels = {
     },
     Practices: {
         Expert: [
-            {name: 'Test Driven Development'},
+            {name: 'TDD'},
         ]
     },
     SoftSkill: {

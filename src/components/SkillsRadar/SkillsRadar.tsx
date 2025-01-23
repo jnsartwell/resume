@@ -1,4 +1,5 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
+import './SkillsRadar.css'
 
 interface Skill {
     name: string;
@@ -19,7 +20,6 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
         return Array.from(new Set(allLevels));
     }, [skills]);
 
-    const numLevels = skillLevels.length;
     const categoryAngles: { [key: string]: number } = useMemo(() => {
         const angles: { [key: string]: number } = {};
         const totalSkills = skillCategories.reduce((sum, category) => {
@@ -84,7 +84,16 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
                 for (let i = 0; i < categoryIndex; i++) {
                     cumulativeAngle += categoryAngles[skillCategories[i]];
                 }
-                const textAngle = cumulativeAngle + categoryAngles[category] / 2;
+
+                // Calculate the starting angle of the sector
+                const sectorStartAngle = cumulativeAngle;
+
+                // Calculate the ending angle of the sector
+                const sectorEndAngle = sectorStartAngle + categoryAngles[category];
+
+                // Calculate the middle angle of the sector
+                const textAngle = (sectorStartAngle + sectorEndAngle) / 2;
+
                 const radius = 52;
 
                 const pathId = `sector-path-${categoryIndex}`;
@@ -117,7 +126,9 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
         </>
     );
 
-    const renderSkillNames = () => (
+    const [hoveredSkill, setHoveredSkill] = useState<string | null>(null); // Store the hovered skill
+
+    const renderSkillToasts = () => (
         <>
             {skillCategories.map((category, categoryIndex) => {
                 let cumulativeAngle = 0;
@@ -126,51 +137,62 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
                 }
                 const categoryStartAngle = cumulativeAngle;
 
-                let currentRadius = 0; // Keep track of the current radius
+                const levelsInCategory = Object.keys(skills[category]).length;
+
                 return skillLevels.map((level, levelIndex) => {
                     const levelSkills = skills[category][level] || [];
 
-                    // Calculate levelRadius considering the number of levels in the category
-                    const levelRadius = (50 / Object.keys(skills[category]).length) * (levelIndex + 1);
+                    // Calculate the base radius for each level, evenly spaced across the sector
+                    const baseLevelRadius = (50 / levelsInCategory) * (levelIndex + 1);
 
-                    const skillRadiusStep = (levelRadius - currentRadius) / levelSkills.length;
-                    currentRadius = levelRadius;
-
+                    // Calculate the angle step for each skill within the level
                     const skillAngleStep = categoryAngles[category] / levelSkills.length;
+
                     return levelSkills.map((skill, skillIndex) => {
-                        const skillRadius = currentRadius - (levelSkills.length - skillIndex - 1) * skillRadiusStep;
+                        // Calculate the angle for the current skill
                         const skillAngle = categoryStartAngle + skillAngleStep * skillIndex + skillAngleStep / 2;
 
-                        let scaleFactor = Math.min(1, 0.8 - (levelSkills.length / 20));
+                        // Adjust the level radius based on the number of skills in the level
+                        const adjustedLevelRadius = baseLevelRadius + (baseLevelRadius / (levelsInCategory + 1)) * (levelSkills.length - 1) / 2;
 
-                        // Ensure skillRadius * scaleFactor does not exceed the outer circle radius (50)
-                        const maxRadius = 48;
-                        if (skillRadius * scaleFactor > maxRadius) {
-                            scaleFactor = maxRadius / skillRadius;
+
+                        let scaleFactor = Math.min(1, 0.8 - (levelSkills.length / 10));
+                        const maxRadius = 50;
+                        if (adjustedLevelRadius * scaleFactor > maxRadius) {
+                            scaleFactor = maxRadius / adjustedLevelRadius;
                         }
 
-                        const x = 50 + Math.cos((skillAngle * Math.PI) / 180) * (skillRadius * scaleFactor);
-                        const y = 50 + Math.sin((skillAngle * Math.PI) / 180) * (skillRadius * scaleFactor);
+                        // const scaleFactor = Math.min(1, 0.8 - (levelSkills.length / 10));
+
+
+                        const x = 50 + Math.cos((skillAngle * Math.PI) / 180) * (adjustedLevelRadius * scaleFactor);
+                        const y = 50 + Math.sin((skillAngle * Math.PI) / 180) * (adjustedLevelRadius * scaleFactor);
+
+                        const toastX = x + 5; // Position toast to the right of the dot
+                        const toastY = y - 15; // Position toast above the dot
 
                         return (
-                            <text
-                                key={`${level}-${category}-${skillIndex}`}
-                                x={x}
-                                y={y}
-                                dominantBaseline="middle"
-                                textAnchor="middle"
-                                fontSize="2"
-                                fontWeight="bold"
-                                fill={categoryColors[category]}
-                            >
-                                {skill.name}
-                            </text>
+                            hoveredSkill === skill.name && (
+                                <foreignObject
+                                    key={`${level}-${category}-${skillIndex}`}
+                                    x={toastX}
+                                    y={toastY}
+                                    width={skill.name.length * 2} // Dynamic width based on skill name length
+                                    height={20} // Fixed height, adjust as needed
+                                    style={{ pointerEvents: 'none' }}
+                                >
+                                    <div className="skill-toast" style={{backgroundColor: categoryColors[category]}}>
+                                        {skill.name}
+                                    </div>
+                                </foreignObject>
+                            )
                         );
                     });
                 });
             })}
         </>
     );
+
     const renderCircles = () => {
         const radii: { [key: string]: number[] } = {};
 
@@ -218,12 +240,67 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
         );
     };
 
-    return (
+    const renderSkillDots = () => (
+        <>
+            {skillCategories.map((category, categoryIndex) => {
+                let cumulativeAngle = 0;
+                for (let i = 0; i < categoryIndex; i++) {
+                    cumulativeAngle += categoryAngles[skillCategories[i]];
+                }
+                const categoryStartAngle = cumulativeAngle;
+
+                const levelsInCategory = Object.keys(skills[category]).length;
+
+                return skillLevels.map((level, levelIndex) => {
+                    const levelSkills = skills[category][level] ||[];
+
+                    // Calculate the base radius for each level, evenly spaced across the sector
+                    const baseLevelRadius = (50 / levelsInCategory) * (levelIndex + 1);
+
+                    // Calculate the angle step for each skill within the level
+                    const skillAngleStep = categoryAngles[category] / levelSkills.length;
+
+                    return levelSkills.map((skill, skillIndex) => {
+                        // Calculate the angle for the current skill
+                        const skillAngle = categoryStartAngle + skillAngleStep * skillIndex + skillAngleStep / 2;
+
+                        // Adjust the level radius based on the number of skills in the level
+                        const adjustedLevelRadius = baseLevelRadius + (baseLevelRadius / (levelsInCategory + 1)) * (levelSkills.length - 1) / 2;
+
+                        // let scaleFactor = Math.min(1, 0.8 - (levelSkills.length / 10));
+                        // const maxRadius = 45;
+                        // if (adjustedLevelRadius * scaleFactor > maxRadius) {
+                        //     scaleFactor = maxRadius / adjustedLevelRadius;
+                        // }
+
+                        const scaleFactor = Math.min(1, 0.8 - (levelSkills.length / 10));
+
+                        const x = 50 + Math.cos((skillAngle * Math.PI) / 180) * (adjustedLevelRadius * scaleFactor);
+                        const y = 50 + Math.sin((skillAngle * Math.PI) / 180) * (adjustedLevelRadius * scaleFactor);
+
+                        return (
+                            <circle
+                                key={`<span class="math-inline">{level}-</span>{category}-${skillIndex}`}
+                                cx={x}
+                                cy={y}
+                                r="1.5"
+                                fill={categoryColors[category]}
+                                onMouseEnter={() => setHoveredSkill(skill.name)}
+                                onMouseLeave={() => setHoveredSkill(null)}
+                                style={{ cursor: 'pointer' }}
+                            />
+                        );
+                    });
+                });
+            })}
+        </>
+    );    return (
         <svg width="100%" height="100%" viewBox="-15 -15 130 130">
             {renderSectorNames()}
             {renderSectorLines()}
             {renderCircles()}
-            {renderSkillNames()}
+            {renderSkillDots()}
+            {renderSkillToasts()}
         </svg>
     );
 };
