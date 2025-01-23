@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, { useMemo } from 'react';
 
 interface Skill {
     name: string;
@@ -8,15 +8,15 @@ interface SkillsRadarProps {
     skills: { [key: string]: { [key: string]: Skill[] } };
 }
 
-const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => {
-    const skillLevels = useMemo(() => Object.keys(skills), [skills]);
+const SkillsRadar: React.FC<SkillsRadarProps> = ({ skills }: SkillsRadarProps) => {
+    const skillCategories = useMemo(() => Object.keys(skills), [skills]);
 
-    const skillCategories = useMemo(() => {
-        const allCategories: string[] = [];
-        for (const level in skills) {
-            allCategories.push(...Object.keys(skills[level]));
+    const skillLevels = useMemo(() => {
+        const allLevels: string[] = [];
+        for (const category in skills) {
+            allLevels.push(...Object.keys(skills[category]));
         }
-        return Array.from(new Set(allCategories));
+        return Array.from(new Set(allLevels));
     }, [skills]);
 
     const numLevels = skillLevels.length;
@@ -34,7 +34,7 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
 
     const levelRadii = useMemo(() => {
         const radii: number[] = [];
-        const radiusStep = 50 / numLevels; // Changed from size / 2 / numLevels
+        const radiusStep = 50 / numLevels;
         for (let i = 1; i <= numLevels; i++) {
             radii.push(radiusStep * i);
         }
@@ -95,12 +95,13 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
 
     const renderSkillNames = () => (
         <>
-            {skillLevels.map((level, levelIndex) => {
-                const levelRadius = levelRadii[levelIndex];
-                return Object.entries(skills[level]).map(([category, skills]) => {
-                    const categoryAngle = angle * skillCategories.indexOf(category);
-                    const skillAngleStep = angle / skills.length;
-                    return skills.map((skill, skillIndex) => {
+            {skillCategories.map((category, categoryIndex) => {
+                const categoryAngle = angle * categoryIndex;
+                return skillLevels.map((level, levelIndex) => {
+                    const levelRadius = levelRadii[levelIndex];
+                    const categorySkills = skills[category][level] || []; // Renamed to categorySkills
+                    const skillAngleStep = angle / categorySkills.length;
+                    return categorySkills.map((skill, skillIndex) => {
                         const skillAngle = categoryAngle + skillAngleStep * skillIndex + skillAngleStep / 2;
                         const x = 50 + Math.cos((skillAngle * Math.PI) / 180) * (levelRadius * 0.8);
                         const y = 50 + Math.sin((skillAngle * Math.PI) / 180) * (levelRadius * 0.8);
@@ -123,7 +124,6 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
             })}
         </>
     );
-
     const renderCircles = () => (
         <>
             {levelRadii.map((radius, index) => (

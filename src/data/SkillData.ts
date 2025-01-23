@@ -1,41 +1,46 @@
 export const skillsWithExpertiseLevels = {
-    Expert: {
-        Languages: [
+    Languages: {
+        Expert: [
             {name: 'Java'},
             {name: 'Javascript'},
             {name: 'Typescript'},
         ],
-        Frameworks: [
+        Intermediate: [
             {name: 'Spring'},
             {name: 'Angular'},
             {name: 'React'},
         ],
-        Infrastructure: [
+        Beginner: [
             {name: 'Terraform'},
             {name: 'Google Cloud Build'},
         ],
     },
-    Intermediate: {
-        Languages: [
+    Frameworks: {
+        Expert: [
             {name: 'Python'},
             {name: 'Kotlin'},
         ],
-        Frameworks: [
+        Intermediate: [
             {name: 'Aurelia'},
             {name: 'Django'},
         ],
-        Infrastructure: [
+        Beginner: [
             {name: 'Tekton'},
         ],
     },
-    Beginner: {
-        Languages: [
+    Infrastructure: {
+        Expert: [
             {name: 'Cobal'},
             {name: 'Haskell'},
             {name: 'Erlang'},
         ],
-        Frameworks: [
+        Beginner: [
             {name: 'Vue'},
         ],
+    },
+    Practices: {
+        Expert: [
+            {name: 'Test Driven Development'},
+        ]
     },
 }
