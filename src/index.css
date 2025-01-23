@@ -1,8 +1,8 @@
 :root {
-  font-family: Press_Start_2P, serif;
+  font-family: CourierPrime, serif;
 
   color-scheme: light dark;
-  color: #00FF00;
+  color: var(--font-color);
   background-color: #242424;
 
   font-synthesis: none;

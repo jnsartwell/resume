@@ -1,5 +1,7 @@
 import './App.css'
 import './fonts.css'
+import './palette.css'
+
 import Skills from "./pages/skills/Skills.tsx";
 import {BrowserRouter, Route, Routes} from 'react-router-dom';
 import Introduction from "./pages/introduction/Introduction.tsx";
