@@ -125,14 +125,33 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
                     cumulativeAngle += categoryAngles[skillCategories[i]];
                 }
                 const categoryStartAngle = cumulativeAngle;
+
+                let currentRadius = 0; // Keep track of the current radius
                 return skillLevels.map((level, levelIndex) => {
-                    const levelRadius = (50 / numLevels) * (levelIndex + 1);
-                    const categorySkills = skills[category][level] || [];
-                    const skillAngleStep = categoryAngles[category] / categorySkills.length;
-                    return categorySkills.map((skill, skillIndex) => {
+                    const levelSkills = skills[category][level] || [];
+
+                    // Calculate levelRadius considering the number of levels in the category
+                    const levelRadius = (50 / Object.keys(skills[category]).length) * (levelIndex + 1);
+
+                    const skillRadiusStep = (levelRadius - currentRadius) / levelSkills.length;
+                    currentRadius = levelRadius;
+
+                    const skillAngleStep = categoryAngles[category] / levelSkills.length;
+                    return levelSkills.map((skill, skillIndex) => {
+                        const skillRadius = currentRadius - (levelSkills.length - skillIndex - 1) * skillRadiusStep;
                         const skillAngle = categoryStartAngle + skillAngleStep * skillIndex + skillAngleStep / 2;
-                        const x = 50 + Math.cos((skillAngle * Math.PI) / 180) * (levelRadius * 0.8);
-                        const y = 50 + Math.sin((skillAngle * Math.PI) / 180) * (levelRadius * 0.8);
+
+                        let scaleFactor = Math.min(1, 0.8 - (levelSkills.length / 20));
+
+                        // Ensure skillRadius * scaleFactor does not exceed the outer circle radius (50)
+                        const maxRadius = 48;
+                        if (skillRadius * scaleFactor > maxRadius) {
+                            scaleFactor = maxRadius / skillRadius;
+                        }
+
+                        const x = 50 + Math.cos((skillAngle * Math.PI) / 180) * (skillRadius * scaleFactor);
+                        const y = 50 + Math.sin((skillAngle * Math.PI) / 180) * (skillRadius * scaleFactor);
+
                         return (
                             <text
                                 key={`${level}-${category}-${skillIndex}`}
@@ -152,7 +171,6 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => 
             })}
         </>
     );
-
     const renderCircles = () => {
         const radii: { [key: string]: number[] } = {};
 
