@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, {useMemo} from 'react';
 
 interface Skill {
     name: string;
@@ -8,7 +8,7 @@ interface SkillsRadarProps {
     skills: { [key: string]: { [key: string]: Skill[] } };
 }
 
-const SkillsRadar: React.FC<SkillsRadarProps> = ({ skills }: SkillsRadarProps) => {
+const SkillsRadar: React.FC<SkillsRadarProps> = ({skills}: SkillsRadarProps) => {
     const skillCategories = useMemo(() => Object.keys(skills), [skills]);
 
     const skillLevels = useMemo(() => {
@@ -20,57 +20,81 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({ skills }: SkillsRadarProps) =
     }, [skills]);
 
     const numLevels = skillLevels.length;
-    const numCategories = skillCategories.length;
-    const angle = 360 / numCategories;
+    const categoryAngles: { [key: string]: number } = useMemo(() => {
+        const angles: { [key: string]: number } = {};
+        const totalSkills = skillCategories.reduce((sum, category) => {
+            let categorySkillCount = 0;
+            for (const level in skills[category]) {
+                categorySkillCount += skills[category][level].length;
+            }
+            return sum + categorySkillCount;
+        }, 0);
+
+        skillCategories.forEach((category) => {
+            let categorySkillCount = 0;
+            for (const level in skills[category]) {
+                categorySkillCount += skills[category][level].length;
+            }
+            const angle = (categorySkillCount / totalSkills) * 360;
+            angles[category] = angle;
+        });
+
+        return angles;
+    }, [skills, skillCategories]);
 
     const categoryColors = useMemo(() => {
         const colors: { [key: string]: string } = {};
         skillCategories.forEach((category, index) => {
-            const hue = (index / numCategories) * 360;
+            const hue = (index / skillCategories.length) * 360;
             colors[category] = `hsl(${hue}, 70%, 60%)`;
         });
         return colors;
-    }, [skillCategories, numCategories]);
-
-    const levelRadii = useMemo(() => {
-        const radii: number[] = [];
-        const radiusStep = 50 / numLevels;
-        for (let i = 1; i <= numLevels; i++) {
-            radii.push(radiusStep * i);
-        }
-        return radii;
-    }, [numLevels]);
+    }, [skillCategories]);
 
     const renderSectorLines = () => (
         <>
-            {skillCategories.map((_, index) => (
-                <line
-                    key={index}
-                    x1="50"
-                    y1="50"
-                    x2={50 + Math.cos((angle * index * Math.PI) / 180) * 50}
-                    y2={50 + Math.sin((angle * index * Math.PI) / 180) * 50}
-                    stroke="white"
-                    strokeWidth=".25"
-                />
-            ))}
+            {skillCategories.map((category, categoryIndex) => {
+                let cumulativeAngle = 0;
+                for (let i = 0; i < categoryIndex; i++) {
+                    cumulativeAngle += categoryAngles[skillCategories[i]];
+                }
+
+                const x2 = 50 + Math.cos((cumulativeAngle * Math.PI) / 180) * 50;
+                const y2 = 50 + Math.sin((cumulativeAngle * Math.PI) / 180) * 50;
+
+                return (
+                    <line
+                        key={`${category}`}
+                        x1="50"
+                        y1="50"
+                        x2={x2}
+                        y2={y2}
+                        stroke="white"
+                        strokeWidth=".25"
+                    />
+                );
+            })}
         </>
     );
 
     const renderSectorNames = () => (
         <>
-            {skillCategories.map((category, index) => {
-                const textAngle = angle * index + angle / 2;
-                const radius = 50;
+            {skillCategories.map((category, categoryIndex) => {
+                let cumulativeAngle = 0;
+                for (let i = 0; i < categoryIndex; i++) {
+                    cumulativeAngle += categoryAngles[skillCategories[i]];
+                }
+                const textAngle = cumulativeAngle + categoryAngles[category] / 2;
+                const radius = 52;
 
-                const pathId = `sector-path-${index}`;
+                const pathId = `sector-path-${categoryIndex}`;
                 const pathStartX = 50 + Math.cos((textAngle * Math.PI) / 180) * radius;
                 const pathStartY = 50 + Math.sin((textAngle * Math.PI) / 180) * radius;
-                const pathEndX = 50 + Math.cos(((textAngle + angle / 2) * Math.PI) / 180) * radius;
-                const pathEndY = 50 + Math.sin(((textAngle + angle / 2) * Math.PI) / 180) * radius;
+                const pathEndX = 50 + Math.cos(((textAngle + categoryAngles[category] / 2) * Math.PI) / 180) * radius;
+                const pathEndY = 50 + Math.sin(((textAngle + categoryAngles[category] / 2) * Math.PI) / 180) * radius;
 
                 return (
-                    <React.Fragment key={index}>
+                    <React.Fragment key={categoryIndex}>
                         <path
                             id={pathId}
                             d={`M ${pathStartX},${pathStartY} A ${radius},${radius} 0 0 1 ${pathEndX},${pathEndY}`}
@@ -96,13 +120,17 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({ skills }: SkillsRadarProps) =
     const renderSkillNames = () => (
         <>
             {skillCategories.map((category, categoryIndex) => {
-                const categoryAngle = angle * categoryIndex;
+                let cumulativeAngle = 0;
+                for (let i = 0; i < categoryIndex; i++) {
+                    cumulativeAngle += categoryAngles[skillCategories[i]];
+                }
+                const categoryStartAngle = cumulativeAngle;
                 return skillLevels.map((level, levelIndex) => {
-                    const levelRadius = levelRadii[levelIndex];
-                    const categorySkills = skills[category][level] || []; // Renamed to categorySkills
-                    const skillAngleStep = angle / categorySkills.length;
+                    const levelRadius = (50 / numLevels) * (levelIndex + 1);
+                    const categorySkills = skills[category][level] || [];
+                    const skillAngleStep = categoryAngles[category] / categorySkills.length;
                     return categorySkills.map((skill, skillIndex) => {
-                        const skillAngle = categoryAngle + skillAngleStep * skillIndex + skillAngleStep / 2;
+                        const skillAngle = categoryStartAngle + skillAngleStep * skillIndex + skillAngleStep / 2;
                         const x = 50 + Math.cos((skillAngle * Math.PI) / 180) * (levelRadius * 0.8);
                         const y = 50 + Math.sin((skillAngle * Math.PI) / 180) * (levelRadius * 0.8);
                         return (
@@ -124,8 +152,9 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({ skills }: SkillsRadarProps) =
             })}
         </>
     );
+
     const renderCircles = () => {
-        const radii: { [key: string]: number[] } = {}; // Radii for each category
+        const radii: { [key: string]: number[] } = {};
 
         skillCategories.forEach((category) => {
             const categoryLevels = Object.keys(skills[category]);
@@ -140,7 +169,6 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({ skills }: SkillsRadarProps) =
 
         return (
             <>
-                {/* Render the complete outer circle */}
                 <circle
                     cx="50"
                     cy="50"
@@ -151,12 +179,16 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({ skills }: SkillsRadarProps) =
                 />
 
                 {skillCategories.map((category, categoryIndex) => {
-                    const categoryAngle = angle * categoryIndex;
-                    const nextCategoryAngle = angle * (categoryIndex + 1); // Angle of the next category
+                    let cumulativeAngle = 0;
+                    for (let i = 0; i < categoryIndex; i++) {
+                        cumulativeAngle += categoryAngles[skillCategories[i]];
+                    }
+                    const categoryStartAngle = cumulativeAngle;
+                    const nextCategoryAngle = categoryStartAngle + categoryAngles[category];
                     return radii[category].map((radius, radiusIndex) => (
                         <path
                             key={`${category}-${radiusIndex}`}
-                            d={`M ${50 + Math.cos((categoryAngle * Math.PI) / 180) * radius},${50 + Math.sin((categoryAngle * Math.PI) / 180) * radius} 
+                            d={`M ${50 + Math.cos((categoryStartAngle * Math.PI) / 180) * radius},${50 + Math.sin((categoryStartAngle * Math.PI) / 180) * radius} 
                                A ${radius},${radius} 0 0 1 ${50 + Math.cos((nextCategoryAngle * Math.PI) / 180) * radius},${50 + Math.sin((nextCategoryAngle * Math.PI) / 180) * radius}`}
                             strokeWidth={.25}
                             stroke="#505050"
@@ -167,14 +199,14 @@ const SkillsRadar: React.FC<SkillsRadarProps> = ({ skills }: SkillsRadarProps) =
             </>
         );
     };
+
     return (
-        <svg width="100%" height="100%" viewBox="0 0 100 100">
-            {renderSectorLines()}
+        <svg width="100%" height="100%" viewBox="-15 -15 130 130">
             {renderSectorNames()}
+            {renderSectorLines()}
             {renderCircles()}
             {renderSkillNames()}
         </svg>
-
     );
 };
 
