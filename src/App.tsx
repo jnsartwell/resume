@@ -6,7 +6,6 @@ import Introduction from "./pages/introduction/Introduction.tsx";
 import {script} from "./data/IntroductionScript.ts";
 
 const App = () => {
-
     return (
         <BrowserRouter>
             <Routes>
